@@ -405,18 +405,46 @@ static void PatchPatternNear(uintptr_t startRva, size_t scanSize,
 }
 
 static void ApplyBpmPatches() {
-	PatchByte(0x594F51, 0xC8); // GetMaxBpm 157 -> 200
-	PatchByte(0x594F81, 0x3C); // GetMinBpm 90 -> 60
-	const uint8_t lower_cmp_cur[] = { 0x83, 0xFA, 0x5A };
-	const uint8_t lower_mov[] = { 0xB8, 0x5A, 0x00, 0x00, 0x00 };
-	const uint8_t upper_mov[] = { 0xB8, 0x9D, 0x00, 0x00, 0x00 };
-	PatchPatternNear(0x5A1EB0, 0x120, lower_cmp_cur, 3, 2, 0x3C);
-	PatchPatternNear(0x5A1EB0, 0x120, lower_mov, 5, 1, 0x3C);
-	PatchPatternNear(0x5A1EB0, 0x120, upper_mov, 5, 1, 0xC8);
-	const uint8_t lower_cmp_bpm[] = { 0x83, 0xFB, 0x5A };
-	PatchPatternNear(0x59ADB0, 0x120, lower_cmp_bpm, 3, 2, 0x3C);
-	PatchPatternNear(0x59ADB0, 0x120, lower_mov, 5, 1, 0x3C);
-	PatchPatternNear(0x59ADB0, 0x120, upper_mov, 5, 1, 0xC8);
+	// EOS
+	if (*(uint8_t*)(Base + 0x594F51) == 0x9D) {
+		PatchByte(0x594F51, 0xC8); // GetMaxBpm 157 -> 200
+		PatchByte(0x594F81, 0x3C); // GetMinBpm 90 -> 60
+
+		const uint8_t lower_cmp_cur[] = { 0x83, 0xFA, 0x5A };
+		const uint8_t lower_mov[] = { 0xB8, 0x5A, 0x00, 0x00, 0x00 };
+		const uint8_t upper_mov[] = { 0xB8, 0x9D, 0x00, 0x00, 0x00 };
+
+		PatchPatternNear(0x5A1EB0, 0x120, lower_cmp_cur, 3, 2, 0x3C);
+		PatchPatternNear(0x5A1EB0, 0x120, lower_mov, 5, 1, 0x3C);
+		PatchPatternNear(0x5A1EB0, 0x120, upper_mov, 5, 1, 0xC8);
+
+		const uint8_t lower_cmp_bpm[] = { 0x83, 0xFB, 0x5A };
+
+		PatchPatternNear(0x59ADB0, 0x120, lower_cmp_bpm, 3, 2, 0x3C);
+		PatchPatternNear(0x59ADB0, 0x120, lower_mov, 5, 1, 0x3C);
+		PatchPatternNear(0x59ADB0, 0x120, upper_mov, 5, 1, 0xC8);
+		return;
+	}
+
+	// Steam
+	if (*(uint8_t*)(Base + 0x5CC581) == 0x9D) {
+		PatchByte(0x5CC581, 0xC8); // GetMaxBpm 157 -> 200
+		PatchByte(0x5CC5B1, 0x3C); // GetMinBpm 90 -> 60
+
+		const uint8_t lower_cmp_cur[] = { 0x83, 0xFA, 0x5A };
+		const uint8_t lower_cmp_bpm[] = { 0x83, 0xFB, 0x5A };
+		const uint8_t lower_mov[] = { 0xB8, 0x5A, 0x00, 0x00, 0x00 };
+		const uint8_t upper_mov[] = { 0xB8, 0x9D, 0x00, 0x00, 0x00 };
+
+		PatchPatternNear(0x5D9454, 0x80, lower_cmp_cur, 3, 2, 0x3C);
+		PatchPatternNear(0x5D9454, 0x80, lower_mov, 5, 1, 0x3C);
+		PatchPatternNear(0x5D9454, 0x80, upper_mov, 5, 1, 0xC8);
+
+		PatchPatternNear(0x5D23E4, 0x80, lower_cmp_bpm, 3, 2, 0x3C);
+		PatchPatternNear(0x5D23E4, 0x80, lower_mov, 5, 1, 0x3C);
+		PatchPatternNear(0x5D23E4, 0x80, upper_mov, 5, 1, 0xC8);
+		return;
+	}
 }
 
 void FUSER_HOOK() {
