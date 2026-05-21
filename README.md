@@ -15,6 +15,8 @@ This song loader works as a standalone DLL (`winhttp.dll`). It get loaded by Fus
 * Create a `custom_songs` folder in the content pak directory (Should be somewhere like C:/Program Files (x86)/Steam/steamapps/common/Fuser/Fuser/Content/Paks/)
 * Add any custom song .pak + .sig files to that directory. (These can be created with [Fuser Custom Song Creator](https://github.com/NarrikSynthfox/FuserCustomSongCreator))
 
+⚠️ After adding or removing custom songs, make sure to delete your `customSongsUnlocked_P.pak` and `customSongsUnlocked_P.sig` files in `.../Fuser/Fuser/Content/Paks` (the folder above `custom_songs`). The file will regenerate with your new roster on game load.
+
 ## Building
 
 ```bash
