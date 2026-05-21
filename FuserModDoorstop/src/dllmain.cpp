@@ -383,6 +383,42 @@ void setup_hook(void **target, void *hook) {
 	printf("Sucessfully hooked function!\n");
 }
 
+static void PatchByte(uintptr_t rva, uint8_t value) {
+	uintptr_t addr = (uintptr_t)Base + rva;
+	DWORD old;
+	VirtualProtect((LPVOID)addr, 1, PAGE_EXECUTE_READWRITE, &old);
+	*(uint8_t *)addr = value;
+	VirtualProtect((LPVOID)addr, 1, old, &old);
+	FlushInstructionCache(GetCurrentProcess(), (LPVOID)addr, 1);
+}
+
+static void PatchPatternNear(uintptr_t startRva, size_t scanSize,
+	const uint8_t *pattern, size_t patLen,
+	size_t offset, uint8_t newByte) {
+	byte *start = Base + startRva;
+	for (size_t i = 0; i <= scanSize - patLen; i++) {
+		if (memcmp(start + i, pattern, patLen) == 0) {
+			PatchByte(startRva + i + offset, newByte);
+			return;
+		}
+	}
+}
+
+static void ApplyBpmPatches() {
+	PatchByte(0x594F51, 0xC8); // GetMaxBpm 157 -> 200
+	PatchByte(0x594F81, 0x3C); // GetMinBpm 90 -> 60
+	const uint8_t lower_cmp_cur[] = { 0x83, 0xFA, 0x5A };
+	const uint8_t lower_mov[] = { 0xB8, 0x5A, 0x00, 0x00, 0x00 };
+	const uint8_t upper_mov[] = { 0xB8, 0x9D, 0x00, 0x00, 0x00 };
+	PatchPatternNear(0x5A1EB0, 0x120, lower_cmp_cur, 3, 2, 0x3C);
+	PatchPatternNear(0x5A1EB0, 0x120, lower_mov, 5, 1, 0x3C);
+	PatchPatternNear(0x5A1EB0, 0x120, upper_mov, 5, 1, 0xC8);
+	const uint8_t lower_cmp_bpm[] = { 0x83, 0xFB, 0x5A };
+	PatchPatternNear(0x59ADB0, 0x120, lower_cmp_bpm, 3, 2, 0x3C);
+	PatchPatternNear(0x59ADB0, 0x120, lower_mov, 5, 1, 0x3C);
+	PatchPatternNear(0x59ADB0, 0x120, upper_mov, 5, 1, 0xC8);
+}
+
 void FUSER_HOOK() {
 	Base = (byte*)GetModuleHandleA("Fuser-Win64-Shipping.exe");
 	if (Base == 0) {
@@ -691,6 +727,7 @@ BOOL WINAPI DllMain(HMODULE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 #endif
 		CreateUnlockPak();
 		FUSER_HOOK();
+		ApplyBpmPatches();
 	}
 
 	return (TRUE);
